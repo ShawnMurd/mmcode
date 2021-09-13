@@ -1,0 +1,55 @@
+DOCUMENTATION FOR THE DATA COLLECTED IN VORTEX2 BY THE NSSL MOBILE MESONET 
+(OPERATED IN COLLABORATION WITH PSU) AND STRAKA MOBILE MESONET
+--------------------------------------------------------------------------
+
+Each file contains the mobile mesonet data for a specific vehicle for one 
+day.  Files ending in .qcd have been qcd.
+
+Mobile mesonet data recorded by the NSSL-PSU mobile mesonet (vehicle 
+ID's P1, P2, P3, P4, P5, and P7) and Straka mobile mesonet (P8) are 
+formatted as follows:
+
+id time lat lon Tfast Tslow RH p dir spd qc1 qc2 qc3 qc4
+
+id: 2-character vehicle ID
+time: UTC time in decimal format
+lat: latitude in decimal format
+lon: longitude in decimal format
+Tfast: fast-response temperature in Celsius
+Tslow: slow-response temperature in Celsius (the response is slowed 
+       because the sensor is located with the RH probe inside a trapped 
+       volume enclosed by a microporous membrane that keeps the RH probe 
+       from being contaminated by pollutants)
+RH: relative humidity (%)
+p: pressure in millibars
+dir: wind direction in degrees
+spd: wind speed in m/s
+qc1: set to 1 if there's a data logger problem (possible radio frequency 
+     interference)
+qc2: set to 1 if wind data are contaminated by vehicle acceleration
+qc3: set to 1 if something in the data didn't pass an insanity check
+qc4: set to 1 if the vehicle is stationary, in which case temperature and 
+     RH data might be suspect owing to insufficient aspiration.
+
+
+For more information, contact Paul Markowski (pmarkowski@psu.edu) or Yvette 
+Richardson (yrichardson@psu.edu).  Also see 
+
+Straka, J.M., E.N. Rasmussen, and S.E. Fredrickson, 1996:  A mobile 
+mesonet for finescale meteorological observations.  Journal of 
+Atmospheric and Oceanic Technology, 13, 921-936.
+
+
+Notes: Tfast in 2009 was obtained from a temperature probe housed inside the
+"J tube" atop the mobile mesonet vehicles.  It was found that these data were
+questionable owing to insufficient aspiration when the vehicles were
+stationary, which is why the qc4 flag was used to flag data collected while
+stationary.  In 2010, Tfast was obtained from a temperature probe housed
+inside a newly designed "U tube" (J tube data also were collect in 2010).  It
+was found that these measurements were reliable even when vehicles were
+stationary (the qc4 flag is still present in the 2010 data files, however, in
+order to use consistent formatting in both 2009 and 2010).  Those interested
+in learning more about the U tube should contact its designer, Sean Waugh
+(Sean.Waugh@noaa.gov).  Those interested in obtaining J tube data for 2010
+should contact either Paul Markowski or Yvette Richardson (their email
+addresses are shown above).

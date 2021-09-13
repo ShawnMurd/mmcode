@@ -1,0 +1,28 @@
+mm_code_v1_0: Original code
+
+mm_code_v1_1: Two bug fixes, one new feature
+    (1) Change the way the probe ID is extracted. Use .iloc[0] instead of [0] because just using
+        [0] throws an error if the first line in the mobile mesonet file triggers a QC flag (and is 
+        therefore removed). Example: 14 May 2010.
+    (2) Change the way t_dec is determined so that way analysis times on the next day 
+        (e.g., 0100 UTC on June 6, 2009) have 24 hours added to them (just like the mobile mesonet
+        decimal times). Example: 4 June 2009.
+    Release Date: 18 June 2019
+
+    New feature: Plot radar data using contourf instead of pcolormesh so plots look nicer (and to 
+        please Paul)
+    Date Added: 21 June 2019
+
+mm_code_v2_0: Two bug fixes
+    (1) Change the variable 'units' to 'mm_units' b/c 'units' is an alias for the units module from
+        MetPy
+    (2) Change line 212 in mm_code_v1_1 to read 'dataframe.iloc[i+1:, 1] += 24'
+    (3) Add ability to plot mobile mesonet and radar data using Cartesian coordinates (flat-Earth
+        approximation is used)
+    (4) Force aspect ratio to be equal for coords == 'latlon'
+    (5) Add toggle for plotting grid
+    (6) Add option to change output file suffix
+    (7) Remove white lines between contour areas in contourf
+
+Shawn Murdzek
+sfm5282@psu.edu
