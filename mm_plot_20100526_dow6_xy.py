@@ -18,6 +18,7 @@ Date Created: March 20, 2018
 import numpy as np
 import datetime as dt
 import matplotlib.pyplot as plt
+import metpy
 from metpy.plots import StationPlot
 from metpy.units import units
 from metpy.calc import reduce_point_density
@@ -26,6 +27,8 @@ import numpy.ma as ma
 import pandas as pd
 import pyart
 import cartopy.crs as ccrs
+
+v_metpy = int(metpy.__version__[0])
 
 
 #---------------------------------------------------------------------------------------------------
@@ -277,8 +280,12 @@ for f in mm_files:
     T = dataframe['Tfast'].values * units.degC
     RH = dataframe['RH'].values * units.percent
     pres = dataframe['p'].values * units.millibars
-    mix = mct.mixing_ratio_from_relative_humidity(RH, T, pres)
-    Td = mct.dewpoint_rh(T, RH)
+    if v_metpy < 1:
+        mix = mct.mixing_ratio_from_relative_humidity(RH, T, pres)
+        Td = mct.dewpoint_rh(T, RH)
+    else:
+        mix = mct.mixing_ratio_from_relative_humidity(pres, T, RH)
+        Td = mct.dewpoint_from_relative_humidity(T, RH)
 
     dataframe['THETAV'] = mct.virtual_potential_temperature(pres, T, mix).magnitude
     dataframe['THETAE'] = mct.equivalent_potential_temperature(pres, T, Td).magnitude
@@ -544,7 +551,7 @@ for t, rad_f in zip(anal_t, rad_files):
 
     # Add title and annotation
 
-    plt.title('%s UTC, %.1fsec Radius' % (t.strftime('%Y%m%d %H%M:%S'), dtmax), size=20)
+    plt.title('%s UTC, %.1f sec Radius' % (t.strftime('%Y%m%d %H%M:%S'), dtmax), size=20)
     
     if use_base:
         fig.text(0.025, 0.015, ('Thermodynamic Base State Time: %.5f to %.5f' % 
@@ -575,6 +582,7 @@ if color_code:
     print('Maximum Color Variable Value =', max(col_var_max))
     print('Minimum Color Variable Value =', min(col_var_min))
     print()
+
 
 
 """
