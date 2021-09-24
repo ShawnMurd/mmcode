@@ -333,7 +333,8 @@ class mmdata:
         motion : list of float or None, optional
             Storm motion (m/s) in (cx, cy) format
         radar : string or None, optional
-            NEXRAD radar file name to plot mobile mesonet data on top of (REF field is used)
+            NEXRAD radar file name to plot mobile mesonet data on top of (reflectivity field is 
+            used)
         coord : string, optional
             Horizontal coordinates, can be Cartesian ('cart') or latitude-longitude ('latlon')
         xlim : list of floats or 'auto', optional
@@ -358,11 +359,34 @@ class mmdata:
         
         """
         
-        # Process mobile mesonet observations
+        # Prep mobile mesonet observations for plotting
         
         subset = self.filter_time(anal_t, dtmax)
         if motion != None:
             subset.time_to_space(anal_t, motion)
+        mmthin = subset.thin(spacing, anal_t=anal_t, coord=coord)
+        
+        # Create axes, if needed
+        
+        if ax is None:
+            fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 10))
+        
+        # Plot radar data
+        
+        rad = pyart.io.read_nexrad_archive(radar)
+        scan = rad.extract_sweeps([0])
+        ref = scan.fields['reflectivity']['data']
+        avg_el = np.mean(scan.elevation['data'])
+        if coord == 'latlon:
+            gate_x = scan.gate_longitude['data']
+            gate_y = scan.gate_latitude['data']
+        elif coord == 'cart':
+            gate_x = scan.gate_x['data'] * 0.001
+            gate_y = scan.gate_y['data'] * 0.001
+            
+        # Plot mobile mesonet data
+        
+        return ax
         
 
 #---------------------------------------------------------------------------------------------------
