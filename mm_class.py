@@ -88,7 +88,7 @@ class mmdata:
                 self.d.loc[:, t_vars] = self.d.loc[:, t_vars].mask(self.d[key] == 1, other=fill)
         
         self.d.mask(self.d == miss, other=fill, inplace=True)
-        self.d.reset_index(inplace=True)
+        self.d.reset_index(inplace=True, drop=True)
         
         
     def ll_to_xy(self, origin):
@@ -205,8 +205,8 @@ class mmdata:
         
         Returns
         -------
-        filter_df : pandas.DataFrame
-            DataFrame with only observations within dtmax of anal_t retained
+        filter_df : mmdata object
+            mmdata object with only observations within dtmax of anal_t retained
         
         """
         
@@ -215,7 +215,7 @@ class mmdata:
         
         filter_df = self.d.loc[(self.d['time'] >= (t_dec - dt_dec)) & 
                                (self.d['time'] <= (t_dec + dt_dec))].copy()
-        filter_df.reset_index(inplace=True)
+        filter_df.reset_index(inplace=True, drop=True)
         
         return mmdata(filter_df, self.ref_time)
         
@@ -233,14 +233,22 @@ class mmdata:
             
         Fields added to self.d
         ----------------------
-        lat_sr : float
+        lat : float
             Storm-relative latitude (deg N)
-        lon_sr : float
+        lon : float
             Storm-relative longitude (deg E)
-        x_sr : float
+        x : float
             Storm-relative x-coordinate (km), only computed if 'x' column exists
-        y_sr : float
+        y : float
             Storm-relative y-coordinate (km), only computed if 'x' column exists
+        lat_gr : float
+            Ground-relative latitude (deg N)
+        lon_gr : float
+            Ground-relative longitude (deg E)
+        x_gr : float
+            Ground-relative x-coordinate (km)
+        y_gr : float
+            Ground-relative y-coordinate (km)
             
         Notes
         -----
@@ -255,13 +263,60 @@ class mmdata:
         C = 2. * np.pi * R
         lat = self.d['lat'].values
         lon = self.d['lon'].values
-        self.d['lat_sr'] = lat - (motion[1] * (360. / C) * delta_t)
-        self.d['lon_sr'] = lon - (motion[0] * (360. / (C * np.cos(np.deg2rad(lat)))) * delta_t)
+        
+        self.d['lat_gr'] = self.d['lat']
+        self.d['lon_gr'] = self.d['lon']
+        self.d['lat'] = lat - (motion[1] * (360. / C) * delta_t)
+        self.d['lon'] = lon - (motion[0] * (360. / (C * np.cos(np.deg2rad(lat)))) * delta_t)
         
         if 'x' in self.d.columns:
-            self.d['x_sr'] = self.d['x'] - (0.001 * motion[0] * delta_t)
-            self.d['y_sr'] = self.d['y'] - (0.001 * motion[1] * delta_t)
+            self.d['x_gr'] = self.d['x']
+            self.d['y_gr'] = self.d['y']
+            self.d['x'] = self.d['x_gr'] - (0.001 * motion[0] * delta_t)
+            self.d['y'] = self.d['y_gr'] - (0.001 * motion[1] * delta_t)
     
+    
+    def thin(self, spacing, anal_t=None, coord='latlon'):
+        """
+        Thin mobile mesonet observations
+        
+        Parameters
+        ----------
+        spacing : float
+            Minimum spacing between mobile mesonet observations (km or deg)
+        anal_t : datetime.datetime, optional
+            Prioritize observations closer to anal_time. Set to None to not prioritize points duing
+            thinning
+        coord : string, optional
+            Coordinates used for thinning ('latlon' or 'cart')
+        
+        Returns
+        -------
+        mmthin : mmdata object
+            mmdata object with observations thinned out
+        
+        """
+        
+        if coord == 'latlon':
+            x = self.d['lon'].values
+            y = self.d['lat'].values
+        elif coord == 'cart':
+            x = self.d['x'].values
+            y = self.d['y'].values
+            
+        pts = np.transpose(np.array([x, y]))
+        if anal_t is None:
+            ind = reduce_point_density(pts, spacing)
+        else:
+            t_dec = (anal_t - self.ref_time).total_seconds() / 3600.
+            priority = 100. - np.abs(self.d['time'].values - t_dec)
+            ind = reduce_point_density(pts, spacing, priority=priority)
+            
+        df = self.d.iloc[ind, :].copy()
+        df.reset_index(inplace=True, drop=True)
+            
+        return mmdata(df, self.ref_time)
+        
     
     def plot(self, anal_t, dtmax, motion=None, radar=None, coord='cart', xlim='auto', ylim='auto', 
              mmvars=[None, 'THETAV', None, None], fontsize=8, spacing=5.,
@@ -303,9 +358,11 @@ class mmdata:
         
         """
         
-        # Filter mobile mesonet observations based on time
+        # Process mobile mesonet observations
         
-        df = self.filter_time(anal_t, dtmax)
+        subset = self.filter_time(anal_t, dtmax)
+        if motion != None:
+            subset.time_to_space(anal_t, motion)
         
 
 #---------------------------------------------------------------------------------------------------
@@ -372,8 +429,11 @@ mm.qc()
 mm.ll_to_xy([31.9, -102.6])
 mm.sr_winds([5., 4.])
 mm.thermo()
+
 subset = mm.filter_time(dt.datetime(2010, 5, 14, 18, 28), 300.)
 subset.time_to_space(dt.datetime(2010, 5, 14, 18, 28), [5., 4.])
+
+mmthin = subset.thin(0.02, anal_t=dt.datetime(2010, 5, 14, 18, 28))
 
 '''
 # Initial day mobile mesonet is collecting data
