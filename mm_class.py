@@ -24,8 +24,6 @@ import pandas as pd
 import pyart
 import cartopy.crs as ccrs
 
-v_metpy = int(metpy.__version__[0])
-
 
 #---------------------------------------------------------------------------------------------------
 # Create Mobile Mesonet Data Class
@@ -37,35 +35,15 @@ class mmdata:
     
     Parameters
     ----------
-    fnames : list of strings
-        Mobile mesonet file names
+    df : pd.DataFrame
+        Mobile mesonet observations
     init_day : datetime.datetime
         Datetime corresponding to time = 0.0 in the mobile mesonet data files
         
     """
     
-    def __init__(self, fnames, init_day):
-        cols = ['id', 'time', 'lat', 'lon', 'Tfast', 'Tslow', 'RH', 'p', 'dir', 'spd', 'qc1', 'qc2', 
-                'qc3', 'qc4']
-        tmp = []
-        for f in fnames:
-            df = pd.read_csv(f, header=None, names=cols, delim_whitespace=True)
-            
-            # Change decimal times so that they don't reset every 24 hours
-            
-            i00 = np.where(np.logical_and((df.iloc[1:, 1].values - df.iloc[:-1, 1].values) < 0,
-                                          df.iloc[1:, 1].values < 0.001))[0]
-            for i in i00:
-                df.iloc[i+1:, 1] += 24
-            
-            tmp.append(df)
-            
-        self.d = pd.concat(tmp, ignore_index=True)
-        
-        self.d['u'] = -(self.d['spd'] * np.sin(np.deg2rad(self.d['dir'])))
-        self.d['v'] = -(self.d['spd'] * np.cos(np.deg2rad(self.d['dir'])))
-        self.d['lon'] = -1 * self.d['lon']
-        
+    def __init__(self, df, init_day):
+        self.d = df
         self.ref_time = init_day
         
         
@@ -91,10 +69,10 @@ class mmdata:
         
         QC Field Options
         ----------------
-            'drop' : Drop rows where QC flag == 1
-            'wind' : Set wind variables where QC flag == 1 to the fill values
-            'thermo' : Set thermodynamic variables where QC flag == 1 to the fill values
-            False : Ignore QC flag
+        'drop' : Drop rows where QC flag == 1
+        'wind' : Set wind variables where QC flag == 1 to the fill values
+        'thermo' : Set thermodynamic variables where QC flag == 1 to the fill values
+        False : Ignore QC flag
             
         """
         
@@ -121,6 +99,13 @@ class mmdata:
         ----------
         origin : list of floats
             (latitude, longitude) coordinates of the grid origin in degrees
+            
+        Fields added to self.d
+        ----------------------
+        x : float
+            x-coordinate of mobile mesonet observation (km)
+        y : float
+            y-coordinate of mobile mesonet observation (km)
         
         """
 
@@ -149,11 +134,17 @@ class mmdata:
         ----------
         motion : list of floats
             Storm motion (m/s) in (cx, cy) format
-            
-        Notes
-        -----
-        Original ground-relative winds are saved in the columns u_gr and v_gr, and the columns u and
-        v are overwritten with the storm-relative winds
+        
+        Fields added to self.d
+        ----------------------
+        u_gr : float
+            Original ground-relative u wind (m/s)
+        v_gr : float
+            Original ground-relative v wind (m/s)
+        u : float
+            u storm-relative wind (m/s)
+        v : float
+            v storm-relative wind (m/s)
         
         """
         
@@ -167,13 +158,19 @@ class mmdata:
         """
         Compute derived thermodynamic quantities using MetPy and append to DataFrame
         
-        Computed Quantities
-        -------------------
-            THETAV : Virtual potential temperature (K)
-            THETAE : Equivalent potential temperature (K)
-            THETA : Potential temperature (K)
-            qv : Water vapor mixing ratio (kg/kg)
-            Td : Dewpoint temperature (deg C)
+        Fields added to self.d
+        ----------------------
+        THETAV : float
+            Virtual potential temperature (K)
+        THETAE : float
+            Equivalent potential temperature (K)
+        THETA : float
+            Potential temperature (K)
+        qv : float
+            Water vapor mixing ratio (kg/kg)
+        Td : float
+            Dewpoint temperature (deg C)
+            
         """
         
         T = self.d['Tfast'].values * units.degC
@@ -217,13 +214,56 @@ class mmdata:
         dt_dec = dtmax / 3600.
         
         filter_df = self.d.loc[(self.d['time'] >= (t_dec - dt_dec)) & 
-                               (self.d['time'] <= (t_dec + dt_dec))]
+                               (self.d['time'] <= (t_dec + dt_dec))].copy()
         filter_df.reset_index(inplace=True)
         
-        return filter_df
+        return mmdata(filter_df, self.ref_time)
         
     
-    def plot(self, anal_t, dtmax, radar=None, coord='cart', xlim='auto', ylim='auto', 
+    def time_to_space(self, anal_t, motion):
+        """
+        Time-to-space convert mobile mesonet observations (both Cartesian and lat-lon coordinates)
+        
+        Parameters
+        ----------
+        anal_t : datetime.datetime
+            Time to center analysis on
+        motion : list of float
+            Storm motion (m/s) in (cx, cy) format
+            
+        Fields added to self.d
+        ----------------------
+        lat_sr : float
+            Storm-relative latitude (deg N)
+        lon_sr : float
+            Storm-relative longitude (deg E)
+        x_sr : float
+            Storm-relative x-coordinate (km), only computed if 'x' column exists
+        y_sr : float
+            Storm-relative y-coordinate (km), only computed if 'x' column exists
+            
+        Notes
+        -----
+        See Markowski et al. (2002, MWR) eqn (1) and (2)
+        
+        """
+        
+        t_dec = (anal_t - self.ref_time).total_seconds() / 3600.
+        delta_t = (self.d['time'] - t_dec) * 3600.
+        
+        R = 6.367e6
+        C = 2. * np.pi * R
+        lat = self.d['lat'].values
+        lon = self.d['lon'].values
+        self.d['lat_sr'] = lat - (motion[1] * (360. / C) * delta_t)
+        self.d['lon_sr'] = lon - (motion[0] * (360. / (C * np.cos(np.deg2rad(lat)))) * delta_t)
+        
+        if 'x' in self.d.columns:
+            self.d['x_sr'] = self.d['x'] - (0.001 * motion[0] * delta_t)
+            self.d['y_sr'] = self.d['y'] - (0.001 * motion[1] * delta_t)
+    
+    
+    def plot(self, anal_t, dtmax, motion=None, radar=None, coord='cart', xlim='auto', ylim='auto', 
              mmvars=[None, 'THETAV', None, None], fontsize=8, spacing=5.,
              radar_cmap=pyart.graph.cm_colorblind.HomeyerRainbow, ax=None):
         """
@@ -235,6 +275,8 @@ class mmdata:
             Datetime to center plot on
         dtmax : float
             Maximum time from anal_t to plot mobile mesonet observations (s)
+        motion : list of float or None, optional
+            Storm motion (m/s) in (cx, cy) format
         radar : string or None, optional
             NEXRAD radar file name to plot mobile mesonet data on top of (REF field is used)
         coord : string, optional
@@ -261,9 +303,57 @@ class mmdata:
         
         """
         
-        # 
+        # Filter mobile mesonet observations based on time
         
+        df = self.filter_time(anal_t, dtmax)
         
+
+#---------------------------------------------------------------------------------------------------
+# Other Functions
+#---------------------------------------------------------------------------------------------------
+
+def mm_from_txt(fnames, init_day):
+    """
+    Create mmdata object from a list of inut data file names
+    
+    Parameters
+    ----------
+    fnames : list of strings
+        Mobile mesonet file names
+    init_day : datetime.datetime
+        Datetime corresponding to time = 0.0 in the mobile mesonet data files
+    
+    Returns
+    -------
+    mm_obj : mmdata object 
+        mmdata object containing the data in the mobile mesonet data files
+    
+    """
+        
+    cols = ['id', 'time', 'lat', 'lon', 'Tfast', 'Tslow', 'RH', 'p', 'dir', 'spd', 'qc1', 'qc2', 
+            'qc3', 'qc4']
+    tmp = []
+    for f in fnames:
+        df = pd.read_csv(f, header=None, names=cols, delim_whitespace=True)
+        
+        # Change decimal times so that they don't reset every 24 hours
+        
+        i00 = np.where(np.logical_and((df.iloc[1:, 1].values - df.iloc[:-1, 1].values) < 0,
+                                      df.iloc[1:, 1].values < 0.001))[0]
+        for i in i00:
+            df.iloc[i+1:, 1] += 24
+        
+        tmp.append(df)
+        
+    mm_obj = mmdata(pd.concat(tmp, ignore_index=True), init_day)
+    
+    mm_obj.d['u'] = -(mm_obj.d['spd'] * np.sin(np.deg2rad(mm_obj.d['dir'])))
+    mm_obj.d['v'] = -(mm_obj.d['spd'] * np.cos(np.deg2rad(mm_obj.d['dir'])))
+    mm_obj.d['lon'] = -1 * mm_obj.d['lon']
+    
+    return mm_obj
+        
+
 #---------------------------------------------------------------------------------------------------
 # Test Mobile Mesonet Class (delete later)
 #---------------------------------------------------------------------------------------------------
@@ -277,11 +367,13 @@ mm_files = ['./20100514/p1_100514.qcd',
             './20100514/p5_100514.qcd',
             './20100514/p7_100514.qcd']
 
-mm = mmdata(mm_files, dt.datetime(2010, 5, 14))
+mm = mm_from_txt(mm_files, dt.datetime(2010, 5, 14))
 mm.qc()
 mm.ll_to_xy([31.9, -102.6])
 mm.sr_winds([5., 4.])
 mm.thermo()
+subset = mm.filter_time(dt.datetime(2010, 5, 14, 18, 28), 300.)
+subset.time_to_space(dt.datetime(2010, 5, 14, 18, 28), [5., 4.])
 
 '''
 # Initial day mobile mesonet is collecting data
