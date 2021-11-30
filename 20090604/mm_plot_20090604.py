@@ -36,24 +36,24 @@ v_metpy = int(metpy.__version__[0])
 
 # Mobile mesonet file directory
 
-mm_dir = './20100514/'
+mm_dir = './'
 
 # Mobile mesonet file names
 
-mm_files = ['p1_100514.qcd',
-            'p2_100514.qcd',
-            'p3_100514.qcd',
-            'p4_100514.qcd',
-            'p5_100514.qcd',
-            'p7_100514.qcd']
+mm_files = ['p1_090604.dat.qcd',
+            'p2_090604.dat.qcd',
+            'p3_090604.dat.qcd',
+            'p4_090604.dat.qcd',
+            'p5_090604.dat.qcd',
+            'p7_090604.dat.qcd']
 
 # Initial day mobile mesonet is collecting data
 
-init_day = dt.datetime(2010, 5, 14)
+init_day = dt.datetime(2009, 6, 4)
 
 # Analysis Times. Should correspond to the time that the radar scan is valid
 
-anal_t = [dt.datetime(2010, 5, 14, 18, 28, 0)]
+anal_t = [dt.datetime(2009, 6, 5, 0, 46, 27)]
 
 # For 'cart', the (lat, lon) coordinate of the origin must be specified (in deg N and deg E). The 
 # conversion from (lat, lon) to (x, y) coordinates uses a flat-Earth approximation
@@ -66,14 +66,14 @@ origin_lat = 40.1
 # For coords == 'latlon', units are deg N and deg E
 # For coords = 'cart', units are km
 
-x_min = -102.8
-x_max = -102.45
-y_min = 31.75
-y_max = 32.05
+x_min = -104.8
+x_max = -104.5
+y_min = 41.05
+y_max = 41.3
 
 # Option to show grid
 
-show_grid = True
+show_grid = False
 
 # Define a time period to use to define a background thermodynamic field (in decimal hours). Add 24
 # to the decimal time if it is on the next day (e.g., 2.5 would be 26.5). Set use_base to False to 
@@ -90,16 +90,16 @@ dtmax = 300.0
 # Storm motion vector (m/s) for time-to-space conversion and plotting storm-relative winds in
 # station models
 
-cx = 5.0
-cy = 4.0
+cx = 7.9
+cy = -6.4
 
 # Directory containing radar data
 
-rad_dir = './20100514/'
+rad_dir = './'
 
 # Radar data file names (must have an equal number of radar files and analysis times)
 
-rad_files = ['KMAF20100514_182800_V03.gz']
+rad_files = ['KCYS20090605_004627_V03.gz']
 
 # Radar data type (options: 'nexrad' or 'dorade'). ref_field is only needed for the 'dorade' option
 
@@ -156,7 +156,7 @@ filter_stat = True
 
 # Directory to save plots in and suffix for output file (e.g., '.png', '.pdf')
 
-save_dir = './20100514/'
+save_dir = './'
 f_suffix = '.png'
 
 
@@ -582,7 +582,7 @@ if color_code:
     print('Maximum Color Variable Value =', max(col_var_max))
     print('Minimum Color Variable Value =', min(col_var_min))
     print()
-    
+
 
 """
 End plot_mobile_mesonets.py

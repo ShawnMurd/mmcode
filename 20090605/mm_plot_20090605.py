@@ -36,44 +36,44 @@ v_metpy = int(metpy.__version__[0])
 
 # Mobile mesonet file directory
 
-mm_dir = './20100613/'
+mm_dir = './'
 
 # Mobile mesonet file names
 
-mm_files = ['p1_100613.qcd',
-            'p2_100613.qcd',
-            'p3_100613.qcd',
-            'p4_100613.qcd',
-            'p5_100613.qcd',
-            'p7_100613.qcd']
+mm_files = ['p1_090605.dat.qcd.smooth',
+            'p2_090605.dat.qcd.smooth',
+            'p3_090605.dat.qcd.smooth',
+            'p4_090605.dat.qcd.smooth',
+            'p5_090605.dat.qcd.smooth',
+            'p7_090605.dat.qcd.smooth']
 
 # Initial day mobile mesonet is collecting data
 
-init_day = dt.datetime(2010, 6, 13)
+init_day = dt.datetime(2009, 6, 5)
 
 # Analysis Times. Should correspond to the time that the radar scan is valid
 
-anal_t = [dt.datetime(2010, 6, 13, 21, 26, 35)]
+anal_t = [dt.datetime(2009, 6, 5, 21, 48, 17)]
 
 # For 'cart', the (lat, lon) coordinate of the origin must be specified (in deg N and deg E). The 
 # conversion from (lat, lon) to (x, y) coordinates uses a flat-Earth approximation
 
 coords = 'latlon'
-origin_lon = -103.7
-origin_lat = 39.8
+origin_lon = -104.35
+origin_lat = 40.1
 
 # Lower left corner and upper right corner of grid
 # For coords == 'latlon', units are deg N and deg E
 # For coords = 'cart', units are km
 
-x_min = -100.6
-x_max = -99.9
-y_min = 36.35
-y_max = 36.9
+x_min = -104.65
+x_max = -104.2
+y_min = 41.58
+y_max = 41.95
 
 # Option to show grid
 
-show_grid = True
+show_grid = False
 
 # Define a time period to use to define a background thermodynamic field (in decimal hours). Add 24
 # to the decimal time if it is on the next day (e.g., 2.5 would be 26.5). Set use_base to False to 
@@ -90,16 +90,16 @@ dtmax = 300.0
 # Storm motion vector (m/s) for time-to-space conversion and plotting storm-relative winds in
 # station models
 
-cx = 7.4
-cy = 7.5
+cx = 10.45
+cy = -1.34
 
 # Directory containing radar data
 
-rad_dir = './20100613/'
+rad_dir = './'
 
 # Radar data file names (must have an equal number of radar files and analysis times)
 
-rad_files = ['KAMA20100613_212635_V03.gz']
+rad_files = ['KCYS20090605_214817_V03.gz']
 
 # Radar data type (options: 'nexrad' or 'dorade'). ref_field is only needed for the 'dorade' option
 
@@ -134,11 +134,11 @@ cbar_label = r"$\theta_{e}$ (K)"
 # numeric values that are plotted.
 
 numeric_val = True
-nw_var = 'THETAE'
+nw_var = 'THETAV'
 ne_var = None
 se_var = None
 sw_var = None
-fontsize = 8
+fontsize = 9
 
 # Option to plot station models with wind barbs (wind keyword). The two options for frame are 
 # 'storm-relative' (subtracts off cx and cy) or 'fixed' (plots raw mobile mesonet wind data as is).
@@ -147,7 +147,7 @@ fontsize = 8
 
 wind = True
 frame = 'storm-relative'
-spacing = 0.02
+spacing = 0.022
 
 # Switch to filter out stationary mobile mesonet data. In 2009, data collected from stationary mobile 
 # mesonets was questionable, but this problem was fixed in 2010 (see README_NSSL-PSU_mobilemesonet)
@@ -156,7 +156,7 @@ filter_stat = True
 
 # Directory to save plots in and suffix for output file (e.g., '.png', '.pdf')
 
-save_dir = './20100613/'
+save_dir = './'
 f_suffix = '.png'
 
 

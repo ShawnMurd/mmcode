@@ -37,7 +37,7 @@ v_metpy = int(metpy.__version__[0])
 
 # Mobile mesonet file directory
 
-mm_dir = './20100526/'
+mm_dir = './'
 
 # Mobile mesonet file names
 
@@ -96,7 +96,7 @@ cy = 3.51
 
 # Directory containing radar data
 
-rad_dir = './20100526/'
+rad_dir = './'
 
 # Radar data file names (must have an equal number of radar files and analysis times)
 
@@ -157,7 +157,7 @@ filter_stat = False
 
 # Directory to save plots in and suffix for output file (e.g., '.png', '.pdf')
 
-save_dir = './20100526/'
+save_dir = './'
 f_suffix = '_dow6_xy.pdf'
 
 
