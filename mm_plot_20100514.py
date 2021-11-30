@@ -156,7 +156,7 @@ filter_stat = True
 
 # Directory to save plots in and suffix for output file (e.g., '.png', '.pdf')
 
-save_dir = './'
+save_dir = './20100514/'
 f_suffix = '.png'
 
 
@@ -276,19 +276,20 @@ for f in mm_files:
     # Compute derived thermodynamic quantities using MetPy. To this, units must be added using Pint
     # to make MetPy happy
 
-    T = dataframe['Tfast'].values * units.degC
+    Tfast = dataframe['Tfast'].values * units.degC
+    Tslow = dataframe['Tslow'].values * units.degC
     RH = dataframe['RH'].values * units.percent
     pres = dataframe['p'].values * units.millibars
     if v_metpy < 1:
-        mix = mct.mixing_ratio_from_relative_humidity(RH, T, pres)
-        Td = mct.dewpoint_rh(T, RH)
+        mix = mct.mixing_ratio_from_relative_humidity(RH, Tslow, pres)
+        Td = mct.dewpoint_rh(Tslow, RH)
     else:
-        mix = mct.mixing_ratio_from_relative_humidity(pres, T, RH)
-        Td = mct.dewpoint_from_relative_humidity(T, RH)
+        mix = mct.mixing_ratio_from_relative_humidity(pres, Tslow, RH)
+        Td = mct.dewpoint_from_relative_humidity(Tslow, RH)
 
-    dataframe['THETAV'] = mct.virtual_potential_temperature(pres, T, mix).magnitude
-    dataframe['THETAE'] = mct.equivalent_potential_temperature(pres, T, Td).magnitude
-    dataframe['THETA'] = mct.potential_temperature(pres, T).magnitude
+    dataframe['THETAV'] = mct.virtual_potential_temperature(pres, Tfast, mix).magnitude
+    dataframe['THETAE'] = mct.equivalent_potential_temperature(pres, Tfast, Td).magnitude
+    dataframe['THETA'] = mct.potential_temperature(pres, Tfast).magnitude
     dataframe['mixing'] = mix.magnitude
     dataframe['Td'] = Td.magnitude
  
